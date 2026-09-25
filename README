@@ -1,0 +1,21 @@
+4.4 Tecnologías (Propuesta)
+Todas las fases correspondientes a CRISP-DM se desarrollarán utilizando Python.
+Las etapas de exploración y prototipado de datos se apoyarán en el entorno Google Colab,
+mientras que el pipeline final de entrenamiento e inferencia se estructurará en scripts .py
+independientes, evitando la dependencia de Jupyter Notebooks en los módulos core,
+dado que estos presentan incompatibilidades conocidas con los drivers CUDA/GPU necesarios para el entrenamiento. 
+El desarrollo de las APIs se realizará con la librería FastAPI para el backend,
+encargado de exponer los resultados del modelo y gestionar la lógica de alertas.
+El frontend se desarrollará en [nombrar framework, ej. React] con TypeScript,
+HTML y CSS, incorporando un mecanismo de actualización en tiempo real (ej. WebSockets)
+para reflejar cambios de estado en el mapa de góndolas sin necesidad de recargar la página.
+Como base de datos se utilizará MySQL para almacenar la información relacional del sistema 
+(usuarios, roles, historial de alertas), mientras que las imágenes analizadas se almacenarán 
+de forma separada en el sistema de archivos, referenciadas mediante su ruta en la base de datos. 
+La solución completa se empaquetará mediante contenedores Docker, en línea con el requerimiento de portabilidad 
+y reproducibilidad exigido por Walmart. En cuanto al diseño del software, se aplicarán principios SOLID y patrones 
+de diseño específicos como Strategy para permitir intercambiar el algoritmo de detección, y Repository para desacoplar
+el acceso a datos con el fin de mantener un código mantenible y escalable. 
+
+
+
