@@ -26,15 +26,17 @@ La lógica y los algoritmos de detección de espacios vacíos y quiebre de stock
 
 ## Arquitectura
 
-![Diagrama de arquitectura](./arquitectura.png)
+> **Nota:** el siguiente diagrama es una **propuesta de arquitectura objetivo** trabajada por el equipo; a la fecha **no está implementada en este repositorio** (que hoy solo contiene la documentación de Fase 1 y stubs iniciales en `desarrollo/`). Se documenta aquí como referencia de diseño para las siguientes fases.
 
-La arquitectura se organiza en cuatro grandes bloques: **captura de imágenes** en la sucursal, un **servidor Docker** que aloja todo el stack de procesamiento y la plataforma web, el **acceso de los usuarios** (reponedor, supervisor, administrador), y un **flujo de entrenamiento offline** del modelo de detección.
+![Diagrama de arquitectura (propuesta)](https://drive.google.com/file/d/1gU6roqFDJe12fk0QCS46XLC7lxehZDXA/view?usp=sharing)
+
+La arquitectura propuesta se organiza en cuatro grandes bloques: **captura de imágenes** en la sucursal, un **servidor Docker** que aloja todo el stack de procesamiento y la plataforma web, el **acceso de los usuarios** (reponedor, supervisor, administrador), y un **flujo de entrenamiento offline** del modelo de detección.
 
 ### 1. Captura de imágenes (sucursal)
 
-- **Sistema de cámaras**: cada gondola/recinto toma 1 foto cada 10 minutos mediante un trigger programado.
-- Las fotos se suben a **Microsoft OneDrive**, organizadas por carpeta (`/Sucursal_A/góndola_N/`), también con trigger local cada 10 minutos.
-- El contenedor **`captura-imagenes`** consulta periódicamente (cada 10 seg.) la **Microsoft Graph API (HTTPS)** para descargar las fotos nuevas desde OneDrive hacia el servidor.
+- **Sistema de cámaras**: cada góndola/recinto toma 1 foto cada 10 minutos mediante un trigger programado.
+- Las imágenes se envían hacia el servidor **vía API / Internet**; el mecanismo puntual de transporte todavía está en definición por el equipo (no se ata a un proveedor o suite específica).
+- El contenedor **`captura-imagenes`** es el responsable de recibir/obtener las fotos nuevas y ponerlas a disposición del backend.
 
 ### 2. Servidor — Docker Host
 
@@ -42,10 +44,10 @@ Todo el backend corre dentro de una red Docker (`monitoreo_net`) orquestada por 
 
 | Contenedor | Tecnología | Rol |
 |---|---|---|
-| `captura-imagenes` | Script backend (Python) | Descarga imágenes nuevas desde OneDrive vía Microsoft Graph API |
+| `captura-imagenes` | Script backend (Python) | Recibe/obtiene las imágenes nuevas vía API e Internet y las deja disponibles para el backend |
 | `backend-api` | **FastAPI** (REST API, puerto `:8000`) | Expone la API (`/api`), orquesta la lógica de negocio, solicita inferencia al modelo y gestiona alertas |
-| `modelo-deteccion` | **Python + YOLO / Computer Vision clásico** (servicio interno `:8500`) | Ejecuta la inferencia sobre las imágenes para detectar y cuantificar espacios vacíos |
-| `frontend` | **React + TypeScript** | Interfaz web de monitoreo para reponedores, supervisores y administradores |
+| `modelo-deteccion` | **Python — en evaluación (Computer Vision clásico / R-CNN / YOLO)** (servicio interno `:8500`) | Ejecuta la inferencia sobre las imágenes para detectar y cuantificar espacios vacíos |
+| `frontend` | **Framework en definición** (ver sección Tecnologías) | Interfaz web de monitoreo para reponedores, supervisores y administradores |
 | `nginx` | Reverse proxy (**HTTPS `:443`**) | Sirve el frontend y enruta las peticiones `/api` hacia el backend |
 | `mysql` | **MySQL** | Base de datos relacional: usuarios, roles, historial de alertas |
 
@@ -67,11 +69,9 @@ El flujo interno típico es: `captura-imagenes` hace `POST` de la imagen al `bac
 
 - El entrenamiento y validación del modelo se realiza **offline**, en **Google Colab / Kaggle** (GPU limitada — restricción de hardware, RNF-01).
 - Una vez entrenado y validado, se exporta el artefacto del modelo (`.pt` / `.onnx` / `.pkl`).
-- Ese artefacto se carga manualmente o vía CI/CD al volumen `modelo_artefacto` del servidor, quedando disponible para el contenedor `modelo-deteccion` en cada nueva versión.
+- Ese artefacto se carga al volumen `modelo_artefacto` del servidor, quedando disponible para el contenedor `modelo-deteccion` en cada nueva versión.
 
-### Despliegue
-
-El repositorio de **GitHub** es la fuente de verdad del código; el despliegue hacia el servidor se realiza mediante `docker-compose` / CI-CD.
+El repositorio de **GitHub** es la fuente de verdad del código y del historial de cambios del proyecto.
 
 ---
 
@@ -82,15 +82,15 @@ El repositorio de **GitHub** es la fuente de verdad del código; el despliegue h
 | Lenguaje base (CRISP-DM, exploración, modelado) | **Python** |
 | Prototipado / exploración de datos | **Google Colab** |
 | Pipeline final de entrenamiento e inferencia | Scripts **`.py`** estructurados en IDE profesional (se evita Jupyter Notebook en los módulos core por incompatibilidad con drivers CUDA/GPU) |
-| Detección de espacios vacíos | Computer Vision clásico (bordes, contornos, transformaciones matriciales) priorizado por sobre modelos de Deep Learning, por robustez y menor costo computacional; se evalúan también arquitecturas basadas en redes neuronales (CNN/YOLO) |
+| Detección de espacios vacíos | **En evaluación/experimentación**: Computer Vision clásico (bordes, contornos, transformaciones matriciales) vs. modelos de Deep Learning (**R-CNN** y **YOLO**). El CV clásico aparece en el marco teórico como línea de base a comparar, no como decisión cerrada; se definirá el enfoque final según los resultados de las pruebas |
 | Backend / API | **FastAPI** (Python) — expone los resultados del modelo y gestiona la lógica de alertas |
-| Frontend | **React + TypeScript**, HTML y CSS, con actualización en tiempo real (ej. WebSockets) para reflejar el estado de las góndolas sin recargar la página |
+| Frontend | **En definición**: se está evaluando no usar React + TypeScript, ya que a futuro se busca llevar la interfaz a una app móvil con **Ionic + Angular**. Una alternativa en estudio es desarrollar directamente en **Angular + TypeScript** (compartiendo lenguaje y, potencialmente, componentes/lógica con Ionic para la versión móvil) en lugar de React |
 | Base de datos | **MySQL** — datos relacionales (usuarios, roles, historial de alertas) |
 | Almacenamiento de imágenes | Sistema de archivos (volumen Docker), referenciado por ruta desde la base de datos |
 | Empaquetado / portabilidad | **Docker** y `docker-compose` (contenedores para captura, backend, modelo, frontend, proxy y base de datos) |
 | Reverse proxy / HTTPS | **Nginx** |
 | Notificaciones push | **Firebase Cloud Messaging (FCM)** |
-| Integración con cámaras | **Microsoft OneDrive + Microsoft Graph API** |
+| Integración con cámaras | Envío de imágenes al servidor **vía API / Internet** (mecanismo puntual aún en definición) |
 | Control de versiones | **GitHub** (repositorio público) |
 | Diseño de software | Principios **SOLID**; patrones **Strategy** (intercambiar algoritmo de detección) y **Repository** (desacoplar acceso a datos) |
 | Metodología de gestión de datos/ML | **CRISP-DM** |
@@ -118,6 +118,15 @@ El repositorio de **GitHub** es la fuente de verdad del código; el despliegue h
 - Arquitectura modular: pre-procesamiento / modelo / post-procesamiento, con entradas y salidas tipadas.
 
 ---
+
+## Estado actual del repositorio
+
+Este README describe la **arquitectura y tecnologías propuestas** para el proyecto (Fase 1 — definición). El repositorio, a la fecha, contiene:
+
+- Documentación y evidencias de la Fase 1 (`Fase 1/`).
+- Stubs iniciales de código en `desarrollo/` (`front.tsx`, `back.tsx`, `css.css`), aún sin implementación.
+
+La arquitectura Docker, la integración de cámaras, el modelo de detección y el frontend descritos arriba **están en diseño** y se irán implementando y ajustando en las siguientes fases del proyecto.
 
 ## Referencias
 
