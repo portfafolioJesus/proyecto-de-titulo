@@ -158,9 +158,11 @@ El repositorio de **GitHub** es la fuente de verdad del código y del historial 
 
 ## Cómo probar la demo
 
+> 📁 **[Carpeta de la demo en Google Drive](https://drive.google.com/drive/folders/1ozXtwQrtDGWj1IqZQBe4jQxkk17QxWuo?usp=sharing)**
+
 La demo corre en **Google Colab** con GPU T4 y usa Google Drive para los archivos pesados (dataset, pesos del modelo y resultados).
 
-1. **Obtener los archivos.** Abre la carpeta compartida de Drive: <https://drive.google.com/drive/folders/1ozXtwQrtDGWj1IqZQBe4jQxkk17QxWuo?usp=sharing>
+1. **Obtener los archivos.** Abre la [carpeta compartida de Drive](https://drive.google.com/drive/folders/1ozXtwQrtDGWj1IqZQBe4jQxkk17QxWuo?usp=sharing).
    - Descárgala completa (Drive la entrega comprimida en `.zip`) y descomprímela, o agrégala a tu Drive con *Organizar → Agregar acceso directo / Hacer una copia*.
    - Debe quedar en tu Drive como **`MyDrive/stockeye_v5/`**, con estos contenidos:
      - `StockEye_Demo.ipynb` (este notebook)
