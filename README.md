@@ -1,190 +1,151 @@
-# Stock Eye
+# StockEye
 
-Sistema de Visión Artificial integrado a una **aplicación móvil** para **detectar y cuantificar espacios vacíos en góndolas de supermercado** a partir de imágenes fijas, generando alertas automáticas de reposición cuando el nivel de stock cae bajo el umbral definido por Walmart. El objetivo es reducir las pérdidas de venta asociadas a quiebres de stock no detectados a tiempo.
+Prototipo académico de visión artificial para estimar el **vacío visible en góndolas de supermercado** y gestionar su reposición mediante tickets, responsables y evidencia. Combina análisis de fotografías, un panel web para administración y supervisión, y una aplicación Android para el reponedor.
 
-Proyecto Capstone desarrollado en conjunto con **Walmart Chile** — Padre Alonso Ovalle.
+Proyecto de título de Duoc UC, sede Padre Alonso Ovalle, desarrollado en el contexto del caso de supermercados Walmart Chile.
 
-**Equipo:** Jesús González · Claudio Galiano · Ignacio Ruz Aguilar
+**Equipo:** Jesús González · Claudio Galiano · Ignacio Ruz Aguilar.
 
----
+## Organización del proyecto
 
-## Prioridad del proyecto
+Este repositorio reúne la documentación académica, las evidencias por etapa y la exploración inicial del modelo. La copia local también contiene el sistema integrado en `desarrollo/`.
 
-> El objetivo principal **no** es desarrollar una interfaz gráfica sofisticada para la captura de imágenes, sino resolver adecuadamente la lógica que permite analizar la imagen y determinar los espacios vacíos en las góndolas.
+| Ruta | Contenido |
+|---|---|
+| `Fase 1/` | Definición del proyecto y evidencias grupales e individuales. |
+| `Raíz_ FINAL FASE 1/` | Entrega de Fase 1: requisitos, casos de uso, diagramas y notebook inicial. |
+| `Fase 2/` | Seguimiento y evidencias del desarrollo. |
+| `FINAL FASE 2/` | Manuales, documentación técnica, base de datos, APK y videos de funcionamiento. |
+| `FINAL FASE 3/` | Presentación final y diarios de reflexión de los tres integrantes. |
+| `desarrollo/` | Copia local del backend, base de datos, web, Android y configuración Docker. |
+| `StockEye_Demo.ipynb` | Notebook histórico de exploración y entrenamiento; conserva sus propios requisitos y resultados. |
 
-En esta etapa se prioriza, en este orden:
+### Repositorio de la aplicación
 
-1. La captura de una imagen que pueda ser procesada.
-2. El procesamiento y análisis de dicha imagen.
-3. La identificación de los espacios vacíos.
-4. La determinación del porcentaje de espacio vacío.
-5. La utilización de este resultado para identificar posibles quiebres de stock.
+El código integrado se mantiene en **[bakend_StockEye](https://github.com/portfafolioJesus/bakend_StockEye)**. `desarrollo/` conserva su propio directorio `.git`; no está configurado como submódulo de este repositorio. Los archivos `front.tsx`, `back.tsx` y `css.css` que ya se versionaban allí son restos de la propuesta inicial, no los puntos de entrada del sistema actual.
 
-La lógica y los algoritmos de detección de espacios vacíos y quiebre de stock tienen prioridad sobre la capa gráfica o la interfaz de captura.
+Clonar este repositorio de entregables no garantiza obtener las carpetas que aún estén sin seguimiento en una copia local. Para descargar el sistema por separado, abre una terminal **fuera de `proyecto-de-titulo`** y utiliza una carpeta nueva:
 
----
-
-## Arquitectura
-
-> **Nota:** la arquitectura cambió respecto a la propuesta de Fase 1 (plataforma web con Docker, FastAPI, MySQL y Nginx). Se mantienen **Docker** y la **API**, pero el cliente pasa de ser una web a una **app móvil**, y las imágenes llegan desde un **PC de la tienda** con OneDrive. El diagrama de Fase 1 quedó desactualizado y hay que rehacerlo.
-
-```
-Cámaras de seguridad
-        │  guardan imágenes fijas
-        ▼
-PC de la tienda ── carpeta sincronizada con OneDrive
-        │
-        ▼
-Script 1 · Listener (Python, 24/7)
-        │  detecta imagen nueva
-        ▼
-Script 2 · Inferencia (Python + pesos .pt)
-        │  espacios vacíos, % vacío por repisa, estado del stock
-        ▼
-        │  envía inferencia y alarma (HTTP)
-        ▼
-API (FastAPI, en Docker)
-        │  registra imagen, fecha y hora, resultado
-        │
-        ├──► App móvil: estado de las góndolas
-        └──► Notificación push al reponedor si el stock < 30%
+```powershell
+git clone https://github.com/portfafolioJesus/bakend_StockEye.git stockeye-sistema
+Set-Location .\stockeye-sistema
 ```
 
-### 1. Captura de imágenes (sucursal)
+Para trabajar con la copia integrada que ya existe en esta máquina, entra en `desarrollo/` desde la raíz de `proyecto-de-titulo`.
 
-- Las **cámaras de seguridad** ya instaladas en la sala de venta guardan imágenes fijas (no video) en un **PC de la tienda**.
-- Ese PC tiene la carpeta de capturas sincronizada con **OneDrive**, de modo que las imágenes quedan respaldadas y accesibles.
+## Sistema implementado
 
-### 2. Procesamiento (PC de la tienda)
-
-Dos scripts de Python, desacoplados (arquitectura modular, RF-14), empaquetados con **Docker**:
-
-| Script | Rol |
-|---|---|
-| **Listener** | Corre **24/7** y vigila la carpeta de capturas. Cuando se sube una imagen nueva, se la entrega al script de inferencia. |
-| **Inferencia** | Carga el archivo de pesos **`.pt`** (YOLO26-seg) y detecta los espacios vacíos. Calcula el **% vacío por repisa y por góndola**, decide el estado del stock según el semáforo y **envía la inferencia y la alarma a la API**. |
-
-La lógica del segundo script ya existe como prototipo en el notebook `StockEye_Demo.ipynb` (celdas 7.0, 8.1 y 8.2). Falta migrarla a un `.py`, escribir el listener y conectar el envío a la API.
-
-### 3. API, aplicación móvil y notificaciones
-
-- La **API** (propuesta: **FastAPI**, empaquetada en **Docker**) recibe la inferencia y la alarma desde el script de inferencia, las registra con trazabilidad (imagen, fecha y hora, resultado) y las expone a la app.
-- La **app móvil** consulta la API y muestra el estado de las góndolas.
-- Cuando el stock cae bajo el **30%** (semáforo rojo), la API dispara una **notificación push** (propuesta: **Firebase Cloud Messaging**) al reponedor de la zona.
-- Roles definidos en Fase 1:
-
-| Rol | Qué hace |
-|---|---|
-| Reponedor | Recibe alertas de su zona, las marca "en atención" y "resuelta" |
-| Supervisor | Ve el estado de toda la tienda, prioriza y asigna alertas, configura umbrales y genera reportes |
-| Administrador / Desarrollador | Mantiene el sistema, el modelo y el repositorio |
-
-- *En definición:* dónde se despliega la API (en el PC de la tienda o en un servidor aparte), la base de datos para usuarios, roles e historial de alertas (MySQL fue la propuesta de Fase 1) y el mecanismo de autenticación de la app.
-
-### 4. Entrenamiento del modelo (offline)
-
-- El entrenamiento y la validación se hacen **offline** en **Google Colab** (GPU T4, restricción de hardware RNF-01).
-- Al terminar se exporta el archivo de pesos `.pt`, que se copia al PC de la tienda para que lo use el script de inferencia.
-- Con la **retroalimentación** del notebook (celdas 8.3 y 8.4) se corrigen predicciones y se reentrena de forma incremental.
-
-El repositorio de **GitHub** es la fuente de verdad del código y del historial de cambios del proyecto.
-
----
-
-## Tecnologías
-
-> Las filas marcadas **(implementado)** ya existen en el notebook; el resto es propuesta para la etapa de la app móvil.
-
-| Área | Tecnología |
-|---|---|
-| Lenguaje base (CRISP-DM, exploración, modelado) | **Python** |
-| Prototipado / exploración de datos | **Google Colab** |
-| Pipeline final de entrenamiento e inferencia | Hoy corre en un **notebook de Colab** (exploratorio, GPU T4). Se migrará a scripts **`.py`** estructurados, empaquetados en Docker |
-| Detección de espacios vacíos **(implementado)** | **YOLO26-seg** (segmentación con polígonos). Etiquetado asistido con **SAM 2.1** y **Grounding DINO**; embeddings con **SigLIP**; repisas por geometría (mínimos cuadrados). Se comparó contra la línea base **v4** (cajas YOLO) |
-| Procesamiento en la tienda | Dos scripts de **Python** en el PC de la tienda: un listener 24/7 y un script de inferencia que usa el `.pt` y envía el resultado a la API |
-| Backend / API | **FastAPI** (Python): recibe la inferencia y la alarma, las registra, las expone a la app y dispara la notificación push |
-| App móvil | **En definición**: se evalúa **Ionic + Angular** (TypeScript) para la app que muestra el estado de las góndolas |
-| Base de datos | **MySQL** (propuesta de Fase 1) para usuarios, roles e historial de alertas; confirmar |
-| Almacenamiento de imágenes | Carpeta del PC de la tienda sincronizada con **OneDrive** |
-| Empaquetado / portabilidad | **Docker** (y `docker-compose` si hay más de un contenedor) para scripts y API, para reproducir el entorno en otro equipo (RNF-04) |
-| Notificaciones push | **Firebase Cloud Messaging (FCM)** (propuesta) |
-| Integración con cámaras | Las cámaras guardan imágenes en el PC de la tienda; **OneDrive** las sincroniza |
-| Control de versiones | **GitHub** (repositorio público) |
-| Diseño de software | Principios **SOLID**; patrones **Strategy** (intercambiar algoritmo de detección) y **Repository** (desacoplar acceso a datos) |
-| Metodología de gestión de datos/ML | **CRISP-DM** |
-| Metodología de gestión de proyecto | **Kanban** |
-
-### Restricciones técnicas relevantes (RNF)
-
-- Entrenamiento: máx. **4.0 GB de VRAM** (Google Colab / Kaggle GPU).
-- Inferencia: máx. **1.5–2.0 GB de VRAM**.
-- Tiempo de procesamiento por imagen: **2 a 5 segundos** (no se requiere tiempo real / streaming).
-- El código debe ser reproducible de forma autónoma en el entorno de un ingeniero de Walmart, siguiendo solo la documentación entregada.
-- Cualquier dataset externo debe contar con licencia que permita uso comercial/académico.
-
----
-
-## Requerimientos funcionales clave
-
-- Detección y delimitación (bounding box) de espacios vacíos en góndolas.
-- Cálculo de porcentaje/volumen de espacio libre, segmentado por nivel/repisa.
-- **Alerta de reposición cuando el stock/espacio disponible cae bajo 30%** (semáforo de Walmart: verde ≥ 70% · amarillo 30–70% · rojo < 30% = alerta; parámetros `stock_verde` y `stock_rojo` en la celda 8.1).
-- Diferenciación entre vacío real (quiebre) y vacío no apilable (ej. frascos de vidrio).
-- Robustez ante ruido visual real de sala de venta (~90% de las imágenes con ruido, según Walmart) y distorsión de cámara (fisheye).
-- Procesamiento sobre imagen fija (no video en tiempo real).
-- Registro trazable de cada análisis (imagen, timestamp, resultado).
-- Arquitectura modular: pre-procesamiento / modelo / post-procesamiento, con entradas y salidas tipadas.
-
----
-
-## Estado actual del repositorio
-
-- **Fase 1 (definición):** documentación y evidencias en `Fase 1/`.
-- **Fase 2:** carpeta `Fase 2/` con `Evidencias Individuales/` y `Evidencias Grupales/`.
-- **Pipeline de visión (`StockEye_Demo.ipynb`):** implementado y evaluado en Google Colab (T4), Fases 0 a 8 del notebook. Las Fases 9 (búsqueda vectorial) y 10 (video) están solo planificadas.
-- **Stubs** en `desarrollo/` (`front.tsx`, `back.tsx`, `css.css`), sin implementación. Corresponden a la propuesta web anterior.
-- **Listener, script de inferencia en `.py`, API, Docker y app móvil con notificaciones push:** pendientes, se implementarán después.
-
-### Resultados del modelo (set de validación)
-
-| Métrica | v4 (línea base) | Modelo actual |
+| Componente | Ubicación en `desarrollo/` | Función |
 |---|---|---|
-| Recall de vacíos | 0.27 | 0.57 (entrenamiento base) · **0.76 con P ≥ 0.6** (modelo ganador de la Fase 7, mosaicos + TTA) |
-| mAP50-95 de vacío | 0.099 | 0.352 |
-| F1 de detección de vacíos | 0.48 | 0.57 |
-| Tiempo por foto | — | 2.12 s (cumple 2–5 s) |
+| API FastAPI | `backend/stockeye/api/` | Autenticación, imágenes, tickets, reportes y operaciones por rol. |
+| Inferencia local | `backend/stockeye/inferencia/` | Segmentación con SegFormer exportado a ONNX y cálculo del vacío observado. |
+| Importador y caracterización | `backend/stockeye/importador/`, `backend/stockeye/clasificacion/` | Registro de fotos por recinto, clasificación externa y revisión manual. |
+| Base de datos PostgreSQL 16 | `db/migraciones/` | Esquema, migraciones, reglas de asignación, tareas e historial. |
+| Panel web | `web/` | React, TypeScript y Vite para administrador y supervisor. |
+| Aplicación Android | `StockEye-app-movil/app-movil/` | Kotlin y Compose para reportar fotografías y gestionar tareas. |
+| Capturador | `db/capturador/` | Capturas periódicas desde cámaras configuradas. |
+| Despliegue | `docker-compose.yml`, `docker-compose.recintos.yml` | Servicios del servidor y alternativa de workers por recinto. |
 
----
+La web y Android consumen la misma API. Los servicios separan recepción, inferencia, caracterización y avisos, con PostgreSQL compartido para datos y coordinación de tareas.
 
-## Cómo probar la demo
+```mermaid
+flowchart LR
+    Fotos[Fotografías de cámaras o carpetas] --> Importador
+    Importador --> BD[(PostgreSQL)]
+    Web[Panel web] --> API[FastAPI]
+    Android[App Android] --> API
+    API --> BD
+    Worker[Worker SegFormer ONNX] <--> BD
+    Clasificador[Caracterización] <--> BD
+    Clasificador --> Proveedor[Proveedor externo de IA]
+    Notificador[Avisos] <--> BD
+```
 
-> 📁 **[Carpeta de la demo en Google Drive](https://drive.google.com/drive/folders/1ozXtwQrtDGWj1IqZQBe4jQxkk17QxWuo?usp=sharing)**
+El worker local calcula el porcentaje de vacío. La IA externa caracteriza productos visibles y categorías; su descripción no prueba qué producto falta en un hueco.
 
-La demo corre en **Google Colab** con GPU T4 y usa Google Drive para los archivos pesados (dataset, pesos del modelo y resultados).
+## Flujo de operación
 
-1. **Obtener los archivos.** Abre la [carpeta compartida de Drive](https://drive.google.com/drive/folders/1ozXtwQrtDGWj1IqZQBe4jQxkk17QxWuo?usp=sharing).
-   - Descárgala completa (Drive la entrega comprimida en `.zip`) y descomprímela, o agrégala a tu Drive con *Organizar → Agregar acceso directo / Hacer una copia*.
-   - Debe quedar en tu Drive como **`MyDrive/stockeye_v5/`**, con estos contenidos:
-     - `StockEye_Demo.ipynb` (este notebook)
-     - `dataset_gondolas_2026-10-13.zip`
-     - `stockeye_v4_best.pt`
-     - `runs_f6/` (pesos entrenados de `control_v3` y `maestro_v3`) y, si existe, `modelos/vigente.pt`
-2. **Abrir el notebook en Colab** (clic derecho sobre `StockEye_Demo.ipynb` → *Abrir con → Google Colaboratory*).
-3. **Activar la GPU:** *Entorno de ejecución → Cambiar tipo de entorno → T4 GPU*.
-4. **Correr la celda `[RESTAURAR]`** (la primera celda de código). Monta Drive y ejecuta en orden las celdas 0.1 a 0.9, 1.2, 5.0 a 5.4, 6.1, 6.2, 6.7, 7.0 a 7.5, 8.1 y 8.2. Se detiene si falla alguna o si faltan los pesos de las celdas 6.3 y 6.4.
-5. **Subir una foto de góndola** cuando la celda **8.2** lo pida. El notebook devuelve:
-   - los vacíos como polígonos y el `% vacío` por repisa y por góndola;
-   - el semáforo de stock (rojo = alerta bajo 30%);
-   - el estado `indeterminado` cuando no hay evidencia suficiente.
-   El resultado queda en `stockeye_v5/inferencias/`.
+1. **Entrada automática:** cámaras o carpetas aportan fotografías. El importador registra la captura y el worker ejecuta el análisis.
+2. **Regla de vacío:** si el porcentaje supera el umbral del recinto, se abre un ticket o se incorpora evidencia de seguimiento según la góndola identificada. El ejemplo configurado es 5 %; la comparación es estricta `>`, no `>=`.
+3. **Asignación:** un ticket nuevo se asigna al reponedor activo elegible del mismo recinto con menor carga activa. El supervisor puede asignarlo o reasignarlo; sin candidato, queda abierto.
+4. **Reporte móvil:** el reponedor selecciona la góndola, toma o elige una foto, revisa el resultado y confirma el reporte. Esta vía admite excepciones bajo el umbral.
+5. **Atención y cierre:** se conservan comentarios, evidencias e historial. Un cierre con evidencia analizada que no supera el umbral se distingue del cierre excepcional sin verificación, que exige un comentario de al menos cinco caracteres.
 
-> **Advertencias:**
-> - La celda `[RESTAURAR]` también ejecuta la 6.7 (ajuste fino) y la 7.5 (evaluación); pueden tardar o reentrenar si faltan los pesos intermedios. Es lo más pesado de la demo.
-> - Para probar otra foto sin repetir todo, vuelve a correr solo la celda **8.2**. Para procesar una carpeta completa, escribe su ruta en `CARPETA_F8`.
-> - Fuera de Colab el notebook corre en CPU, mucho más lento.
+Administrador y supervisor utilizan la web; el reponedor utiliza Android. El APK requiere conexión con el backend y no ejecuta el modelo en el teléfono. Los avisos internos y el envío push son capacidades diferentes; Firebase/Web Push requieren configuración y permisos.
 
----
+Si se agota la cuota de caracterización externa, se conserva la cola y se permite clasificación manual. El análisis local de vacío puede continuar mientras estén disponibles sus servicios y la base de datos.
 
-## Referencias
+## Preparar el entorno de desarrollo
 
-Documento base: *Presentación idea de Proyecto — Stock Eye* (Capstone, Padre Alonso Ovalle).
+Requisitos: Git, Docker con Docker Compose y los artefactos del modelo. Para Android se necesita Android Studio y una combinación compatible de JDK, Gradle y Android Gradle Plugin, según su documentación.
+
+Desde la carpeta que contiene `docker-compose.yml` —`desarrollo/` en esta copia—:
+
+```powershell
+if (-not (Test-Path -LiteralPath .env)) {
+    Copy-Item -LiteralPath .env.example -Destination .env
+}
+```
+
+Completa las credenciales y opciones de `.env` de manera privada. Este comando conserva un `.env` existente. Los archivos reales de configuración y secretos se excluyen de Git; `.env.example` queda disponible como plantilla.
+
+Antes de iniciar el worker, coloca en `backend/modelos/` el manifiesto `segformer-mit-b1-v1.json` y su archivo `segformer-mit-b1-v1.onnx`, o configura `MODELOS_HOST` para usar otra ubicación. Los pesos binarios se distribuyen por separado y el manifiesto debe corresponder al archivo.
+
+```powershell
+docker compose up -d --build
+docker compose exec api python -m stockeye.cli modelo registrar /modelos/segformer-mit-b1-v1.json --activar
+```
+
+El primer comando crea o actualiza contenedores y volúmenes; el migrador aplica el esquema. El segundo registra y activa el artefacto indicado. Son pasos de instalación: no fueron ejecutados durante esta actualización del README.
+
+Los datos de demostración son opcionales y modifican la base de datos del entorno:
+
+```powershell
+docker compose --profile demo run --rm seed
+```
+
+| Acceso predeterminado | Dirección |
+|---|---|
+| Panel web | `http://localhost:8080` |
+| Documentación de la API | `http://localhost:8080/api/docs` |
+| PostgreSQL desde el host | `127.0.0.1:5433` |
+| Backend desde el emulador Android | `http://10.0.2.2:8080/` |
+
+Los puertos pueden cambiar mediante `.env`. Para un teléfono real, configura la dirección alcanzable del servidor desde la aplicación. Revisa red, permisos y configuración de transporte antes de probar fuera del emulador.
+
+Con el servidor preparado, las fotos sin clasificar se reciben en `entradas/R01/por_clasificar/` y `entradas/R02/por_clasificar/`, relativas a la carpeta de desarrollo. La web permite revisar imágenes pendientes y corregir categorías.
+
+## Documentación y evidencias
+
+Manuales del repositorio de la aplicación:
+
+- [Instalación y operación](https://github.com/portfafolioJesus/bakend_StockEye/blob/main/docs/MANUAL_INSTALACION.md).
+- [Arquitectura](https://github.com/portfafolioJesus/bakend_StockEye/blob/main/docs/ARQUITECTURA.md).
+- [API](https://github.com/portfafolioJesus/bakend_StockEye/blob/main/docs/API.md).
+- [Aplicación Android](https://github.com/portfafolioJesus/bakend_StockEye/blob/main/StockEye-app-movil/app-movil/README.md).
+
+En la copia local de los entregables:
+
+- APK: `FINAL FASE 2/evidencia de proyecto/Evidencias de sistema/Aplicación/APK sistema/stockeye-debug.apk`.
+- Tutorial web: `FINAL FASE 2/evidencia de proyecto/Evidencias de sistema/StockEye_video_admin-supervisor.zip`.
+- Tutorial móvil: `FINAL FASE 2/evidencia de proyecto/Evidencias de sistema/StockEye_WhatsApp_con_audio.mp4`.
+- Presentación final: `FINAL FASE 3/Evidencias Grupales/Presentación Final del proyecto.pptx`.
+- Manuales de entrenamiento, aplicación y base de datos: carpetas `ANEXOS/` y `Guia implementacion/` de la entrega de Fase 2.
+
+Estos archivos se publican cuando se incorporan expresamente al historial del repositorio; su presencia local no equivale a un commit. Los documentos de etapas anteriores pueden describir otras tecnologías o reglas y deben contrastarse con el código integrado.
+
+## Notebook histórico y alcance de los resultados
+
+`StockEye_Demo.ipynb` conserva una exploración anterior basada en Colab y sus insumos externos. El repositorio contiene también otras versiones del notebook en las entregas. Sus métricas pertenecen a cada experimento y no deben atribuirse automáticamente al SegFormer ONNX del backend.
+
+Antes de ejecutar un notebook, revisa sus rutas de datos, dependencias, pesos y celdas de restauración o entrenamiento: algunas pueden iniciar procesos prolongados. El backend actual no necesita ejecutar ese notebook para atender peticiones.
+
+El porcentaje representa evidencia visible segmentada, no inventario físico, volumen real ni unidades exactas de producto. Los videos demuestran funcionalidades; no acreditan por sí solos precisión general, ahorro económico o validación productiva. La calidad del modelo, los permisos de los datos y las condiciones de despliegue requieren evaluación propia antes de uso real.
+
+## Archivos locales y control de versiones
+
+El `.gitignore` raíz excluye entornos virtuales, dependencias, compilaciones, cachés, configuraciones privadas, datos operativos y pesos de modelos. Conserva las plantillas de configuración y permite documentos, diagramas, notebooks, APK de entrega y los videos o ZIP que sí corresponden al portafolio.
+
+El paquete `stockeye_v6-20261116T000048Z-1-001.zip`, de aproximadamente 1,40 GB, se conserva localmente y se excluye mediante su ruta exacta. GitHub limita a 100 MiB cada archivo en Git normal; el material pesado debe distribuirse por separado con su ubicación y permisos documentados. `.gitignore` no impone un límite por tamaño ni retira archivos que ya estén en el historial.
+
+Antes de preparar un commit, revisa `git status` y selecciona los archivos necesarios. Para la aplicación dentro de `desarrollo/`, comprueba también su repositorio independiente; un commit en el padre no registra automáticamente los cambios del hijo.

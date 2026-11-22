@@ -1,0 +1,69 @@
+# Configuración privada; conservar plantillas para instalar el proyecto
+.env
+.env.*
+!.env.example
+!.env.*.example
+secretos/
+backups/
+google-services.json
+*service-account*.json
+*-firebase-adminsdk-*.json
+**/camaras.json
+*.key
+*.pem
+*.jks
+*.keystore
+
+# Entornos y archivos generados de Python
+.venv/
+.venv*/
+venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Dependencias y salidas de la web
+node_modules/
+dist/
+coverage/
+.npm/
+.npm-cache/
+.pnpm-store/
+
+# Archivos locales de Android Studio y Gradle
+.gradle/
+.kotlin/
+build/
+local.properties
+.idea/
+
+# Pesos de modelos: los manifiestos JSON y notebooks pueden versionarse
+*.pt
+*.pth
+*.onnx
+*.ckpt
+*.safetensors
+*.h5
+*.tflite
+
+# Datos operativos y copia antigua del backend, conservados en disco
+/desarrollo/backend/datos/
+/desarrollo/entradas/
+/desarrollo/StockEye_backend_local/
+
+# Paquete de entrenamiento de 1,40 GB; no ignorar todos los ZIP del portafolio
+/FINAL FASE 2/evidencia de proyecto/Evidencias de sistema/Aplicación/APK sistema/stockeye_v6-20261116T000048Z-1-001.zip
+
+# Temporales de Office y del sistema
+~$*
+*.tmp
+*.temp
+*.log
+.DS_Store
+Thumbs.db
+Desktop.ini
