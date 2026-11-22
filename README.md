@@ -153,3 +153,12 @@ El `.gitignore` raíz excluye entornos virtuales, dependencias, compilaciones, c
 El paquete `stockeye_v6-20261116T000048Z-1-001.zip`, de aproximadamente 1,40 GB, se conserva localmente y se excluye mediante su ruta exacta. GitHub limita a 100 MiB cada archivo en Git normal; el material pesado debe distribuirse por separado con su ubicación y permisos documentados. `.gitignore` no impone un límite por tamaño ni retira archivos que ya estén en el historial.
 
 Antes de preparar un commit, revisa `git status` y selecciona los archivos necesarios. Para la aplicación dentro de `desarrollo/`, comprueba también su repositorio independiente; un commit en el padre no registra automáticamente los cambios del hijo.
+
+
+## Conservación del material en los dos repositorios
+
+`proyecto-de-titulo` y `bakend_StockEye` conservan el mismo código principal y las mismas entregas públicas. Aquí las fuentes están en `desarrollo/` y las entregas en las carpetas de fases de la raíz. En el backend las fuentes están en la raíz y las entregas en `portafolio de titulo jesus-kevin-ignacio/`.
+
+La copia local `desarrollo/portafolio de titulo jesus-kevin-ignacio/` se conserva para que el Git interno del backend encuentre sus rutas históricas. Se excluye del repositorio padre porque estos documentos ya se versionan en las carpetas de fases de la raíz. No se borra ningún documento ni directorio Git.
+
+La sincronización conserva los historiales independientes. Las credenciales, dependencias, modelos y el ZIP de entrenamiento pesado continúan siendo archivos locales; no se incorporan a los nuevos commits.

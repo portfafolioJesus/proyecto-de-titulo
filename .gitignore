@@ -67,3 +67,6 @@ local.properties
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Copia local del portafolio para el historial Git interno; entregas versionadas en la raíz
+/desarrollo/portafolio de titulo jesus-kevin-ignacio/
