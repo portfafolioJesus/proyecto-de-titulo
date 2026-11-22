@@ -8,7 +8,7 @@ Proyecto de título de Duoc UC, sede Padre Alonso Ovalle, desarrollado en el con
 
 ## Organización del proyecto
 
-Este repositorio reúne la documentación académica, las evidencias por etapa y la exploración inicial del modelo. La copia local también contiene el sistema integrado en `desarrollo/`.
+Este repositorio reúne la documentación académica, las evidencias por etapa, la exploración inicial del modelo y una copia versionada del sistema integrado en `desarrollo/`.
 
 | Ruta | Contenido |
 |---|---|
@@ -17,21 +17,25 @@ Este repositorio reúne la documentación académica, las evidencias por etapa y
 | `Fase 2/` | Seguimiento y evidencias del desarrollo. |
 | `FINAL FASE 2/` | Manuales, documentación técnica, base de datos, APK y videos de funcionamiento. |
 | `FINAL FASE 3/` | Presentación final y diarios de reflexión de los tres integrantes. |
-| `desarrollo/` | Copia local del backend, base de datos, web, Android y configuración Docker. |
+| `desarrollo/` | Fuentes del backend, base de datos, web, Android y configuración Docker incluidas en esta entrega. |
 | `StockEye_Demo.ipynb` | Notebook histórico de exploración y entrenamiento; conserva sus propios requisitos y resultados. |
 
-### Repositorio de la aplicación
+### Código de la aplicación y repositorios
 
-El código integrado se mantiene en **[bakend_StockEye](https://github.com/portfafolioJesus/bakend_StockEye)**. `desarrollo/` conserva su propio directorio `.git`; no está configurado como submódulo de este repositorio. Los archivos `front.tsx`, `back.tsx` y `css.css` que ya se versionaban allí son restos de la propuesta inicial, no los puntos de entrada del sistema actual.
+La implementación incluida en `desarrollo/` se versiona aquí como archivos normales, junto con las entregas académicas. El repositorio de trabajo del sistema es **[bakend_StockEye](https://github.com/portfafolioJesus/bakend_StockEye)**; sus cambios no se incorporan automáticamente a esta copia de entrega.
 
-Clonar este repositorio de entregables no garantiza obtener las carpetas que aún estén sin seguimiento en una copia local. Para descargar el sistema por separado, abre una terminal **fuera de `proyecto-de-titulo`** y utiliza una carpeta nueva:
+Para obtener el proyecto completo, abre una terminal fuera de otra copia del repositorio:
 
 ```powershell
-git clone https://github.com/portfafolioJesus/bakend_StockEye.git stockeye-sistema
-Set-Location .\stockeye-sistema
+git clone https://github.com/portfafolioJesus/proyecto-de-titulo.git
+Set-Location .\proyecto-de-titulo\desarrollo
 ```
 
-Para trabajar con la copia integrada que ya existe en esta máquina, entra en `desarrollo/` desde la raíz de `proyecto-de-titulo`.
+Los modelos binarios, datos operativos y secretos se preparan por separado, según las instrucciones de instalación. El APK y las evidencias de funcionamiento están en `FINAL FASE 2/`.
+
+La copia local usada para preparar esta entrega conserva `desarrollo/.git`, pero esos metadatos no se publican. `desarrollo/` no es un submódulo: el historial interno y el del repositorio padre son independientes. Para registrar cambios en este repositorio de entregables, ejecuta Git desde su raíz; un commit realizado dentro del repositorio interno no registra automáticamente esos cambios en el padre.
+
+`front.tsx`, `back.tsx` y `css.css` son restos históricos de la propuesta inicial, no los puntos de entrada del sistema actual.
 
 ## Sistema implementado
 
@@ -132,7 +136,7 @@ En la copia local de los entregables:
 - Presentación final: `FINAL FASE 3/Evidencias Grupales/Presentación Final del proyecto.pptx`.
 - Manuales de entrenamiento, aplicación y base de datos: carpetas `ANEXOS/` y `Guia implementacion/` de la entrega de Fase 2.
 
-Estos archivos se publican cuando se incorporan expresamente al historial del repositorio; su presencia local no equivale a un commit. Los documentos de etapas anteriores pueden describir otras tecnologías o reglas y deben contrastarse con el código integrado.
+Las entregas finales y el código fuente forman parte de esta versión del repositorio. Los documentos de etapas anteriores pueden describir otras tecnologías o reglas y deben contrastarse con el código integrado. El paquete pesado de entrenamiento permanece fuera de Git, como se explica al final de este README.
 
 ## Notebook histórico y alcance de los resultados
 
